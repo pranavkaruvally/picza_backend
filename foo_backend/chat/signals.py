@@ -19,7 +19,7 @@ from .models import (
 from django.conf import settings
 from django.dispatch import receiver
 from django.contrib.auth import get_user_model
-from asgiref.sync import async_to_sync
+from asgiref.sync import async_to_sync, sync_to_async
 from channels.layers import get_channel_layer
 from channels.db import database_sync_to_async
 from django.utils import timezone
@@ -255,8 +255,8 @@ def story_comment_celery(id):
             async_to_sync(channel_layer.group_send)(user.username,_dict)    
 
 
-@receiver(pre_delete, sender=Story)
-def story_deleted_notif(sender, instance, **kwargs):
+#@receiver(pre_delete, sender=Story)
+def story_deleted_notif(instance):
     story_deleted_notif_celery.delay(instance.user.id,instance.id)
     # friends_qs = instance.user.profile.friends.all()
     # channel_layer = get_channel_layer()
@@ -370,6 +370,8 @@ def delete_expired_stories():
     stories_qs = Story.objects.all()
     cur_time = datetime.now()
     for story in stories_qs:
-        story_age = story.time_created - cur_time
+        story_age = cur_time - story.time_created
         if(story_age >= timedelta(hours=1)):
+            story_deleted_notif_celery(story.user.id,story.id)
+            print(story)
             story.delete()

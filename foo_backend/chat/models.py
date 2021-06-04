@@ -245,8 +245,8 @@ class FriendRequest(models.Model):
 
 
 def user_story_directory_path(instance, filename):
-    extension = filename.split(".")[-1]
-    return 'user_{0}/stories/{1}'.format(instance.user.id, filename[:4]+'.'+extension)
+    #extension = filename.split(".")[-1]
+    return 'user_{0}/stories/{1}'.format(instance.user.id, filename)
 
 class Story(models.Model):
 

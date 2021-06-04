@@ -5,3 +5,8 @@ migrations/
 media/
 migrations/
 *.json
+*.pid
+*.dir
+*.dat
+*.dak
+celerybeat-schedule

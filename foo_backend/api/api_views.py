@@ -29,7 +29,7 @@ from .serializers import (
     PostDetailSerializer,
     UserStorySerializer,
 )
-from chat.signals import tell_them_i_have_changed_my_dp
+from chat.signals import tell_them_i_have_changed_my_dp, story_deleted_notif_celery
 import json
 
 User = get_user_model()
@@ -359,6 +359,7 @@ def story_delete_handler(request):
     try:
         print(request.data)
         story = Story.objects.get(id=int(request.query_params['id']))
+        story_deleted_notif_celery.delay(story.user.id, story.id)
         story.delete()
         return Response(status=200)
     except Exception as e:
