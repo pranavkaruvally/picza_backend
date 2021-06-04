@@ -72,7 +72,7 @@ class UserAdmin(BaseUserAdmin):
     list_filter = ['admin']
     fieldsets = (
         (None, {'fields': ('email','uprn','username', 'password')}),
-        ('Personal info', {'fields': ('token',)}),
+        ('Personal info', {'fields': ('token','f_name','l_name')}),
         ('Permissions', {'fields': ('admin',)}),
     )
 
@@ -81,6 +81,7 @@ class UserAdmin(BaseUserAdmin):
             'classes': ('wide',),
             'fields': ('email','uprn','username', 'password1', 'password2')}
         ),
+       
     )
     search_fields = ['email','uprn']
     ordering = ['email']

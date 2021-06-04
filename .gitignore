@@ -8,5 +8,5 @@ migrations/
 *.pid
 *.dir
 *.dat
-*.dak
-celerybeat-schedule
+*.bak
+foo_backend/celerybeat-schedule

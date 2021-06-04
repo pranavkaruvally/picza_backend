@@ -42,6 +42,8 @@ class UserSerializer(serializers.ModelSerializer):
         else:
             representation['dobVerified'] = True
             representation['dp'] = instance.profile.profile_pic.url if instance.profile.profile_pic else ''
+        representation['f_name'] = instance.f_name if instance.f_name else ""
+        representation['l_name'] = instance.l_name if instance.l_name  else ""
         return representation
 
 
