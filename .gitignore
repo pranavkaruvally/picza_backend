@@ -4,4 +4,4 @@ db.sqlite3
 migrations/
 media/
 migrations/
-
+*.json

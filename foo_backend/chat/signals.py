@@ -1,4 +1,9 @@
-from django.db.models.signals import post_save, pre_delete, m2m_changed
+from django.db.models.signals import (
+    post_save, 
+    pre_delete, 
+    m2m_changed,
+    post_delete
+)
 from .models import (
     Profile, 
     ChatMessage, 
@@ -8,6 +13,7 @@ from .models import (
     StoryNotification,
     StoryComment,
     Comment,
+    Post,
     MentionNotification
     )
 from django.conf import settings
@@ -20,7 +26,44 @@ from django.utils import timezone
 from foo_backend.celery import app
 # from .signal_registry import profile
 
+
+from datetime import datetime, timedelta
+
 User = get_user_model()
+
+
+
+
+
+# Signals to delete the media associated with a model if an instance is deleted.
+@receiver(post_delete, sender = User)
+def delete_user_media(sender, instance, **kwargs):
+    if(instance.profile.profile_pic):
+        instance.profile.profile_pic.delete(False)
+
+
+@receiver(post_delete, sender = Story)
+def delete_story_media(sender, instance, **kwargs):
+    if(instance.file):
+        instance.file.delete(False)
+
+
+@receiver(post_delete, sender = Post)
+def delete_post_media(sender, instance, **kwargs):
+    if(instance.file):
+        instance.file.delete(False)
+
+
+@receiver(post_delete, sender = ChatMessage)
+def delete_chat_media(sender, instance, **kwargs):
+    if(instance.file):
+        instance.file.delete(False)
+
+
+
+
+
+
 
 # Signal to create a profile when a user object is created
 
@@ -320,3 +363,13 @@ def tell_them_i_have_changed_my_dp(id):
                 'n_id':notif.id,
             }
             async_to_sync(channel_layer.group_send)(friend.username, _dict)
+
+
+@app.task(name="story_remover")
+def delete_expired_stories():
+    stories_qs = Story.objects.all()
+    cur_time = datetime.now()
+    for story in stories_qs:
+        story_age = story.time_created - cur_time
+        if(story_age >= timedelta(hours=1)):
+            story.delete()
