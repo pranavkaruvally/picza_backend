@@ -395,9 +395,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 to_user, status = await self.get_user_status_from_username(text_data_json['to'])
                 notif_id = await self.create_notification_from_json(text_data_json,to_user)
                 text_data_json['notif_id']=notif_id
+                
                 if status:
+                    to =  text_data_json['to']
+                    text_data_json.pop('to')
+                    text_data_json['from'] = self.room_group_name
                     await self.channel_layer.group_send(
-                        text_data_json['to'],
+                        to,
                         text_data_json
                     )
                 
