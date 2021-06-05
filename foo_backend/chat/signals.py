@@ -142,7 +142,8 @@ def story_created_notif(sender, instance, created, **kwargs):
 @app.task()
 def story_created_notif_celery(id):
         instance = Story.objects.get(id=id)
-        friends_qs = instance.user.profile.friends.all()
+        friends_qs = list(instance.user.profile.friends.all())
+        friends_qs.insert(0, instance.user)
         channel_layer = get_channel_layer()
         test=[]
         for user in friends_qs:
@@ -163,7 +164,7 @@ def story_created_notif_celery(id):
                 }
                 test.append(_dict)
                 async_to_sync(channel_layer.group_send)(user.username,_dict)
-        my_notif = StoryNotification.objects.create(story=instance , notif_type="story_add", to_user=instance.user)
+        #my_notif = StoryNotification.objects.create(story=instance , notif_type="story_add", to_user=instance.user)
         print(test)
 
 
