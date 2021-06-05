@@ -29,6 +29,7 @@ from .serializers import (
     PostDetailSerializer,
     UserStorySerializer,
 )
+from django.db.models import Q
 from chat.signals import tell_them_i_have_changed_my_dp, story_deleted_notif_celery
 import json
 
@@ -145,9 +146,11 @@ def get_previous_posts(request,username):
 def get_profile_and_posts(request, id):
     try:
         user = User.objects.get(id=id)
-        cur_user = User.objects.get(username=request.query_params['username'])
-        friend_request = FriendRequest.objects.filter(
-            from_user=cur_user, to_user=user)
+        cur_user = User.objects.get(id=int(request.query_params['curUserId']))
+        q1 = (Q(from_user=user) & Q(to_user=cur_user))
+        q2 = (Q(from_user=cur_user) & Q(to_user=user))
+
+        friend_request = FriendRequest.objects.filter(q1 | q2)
         print(friend_request)
         serialized = UserProfileSerializer(
             user, context={"request": friend_request,'cur_user':cur_user})

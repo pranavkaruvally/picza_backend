@@ -242,7 +242,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         requests = []
 
         for request in request_qs:
-            requests.append({"type":"notification","username":request.from_user.username, "user_id":request.from_user.id, "id":request.id, 'time':request.time_created,'dp':request.from_user.profile.profile_pic.url})
+            requests.append({"type":"notification","username":request.from_user.username_alias, "user_id":request.from_user.id, "id":request.id, 'time':request.time_created,'dp':request.from_user.profile.profile_pic.url})
 
         return requests
 
@@ -306,7 +306,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             if notif.notif_type=="story_add":
                 final_list.append({                        
                             'type':'story_add',
-                            'u':notif.story.user.username,
+                            'u':notif.story.user.username_alias,
                             'u_id':notif.story.user.id,
                             's_id':notif.story.id,
                             'dp':notif.story.user.profile.profile_pic.url if notif.story.user.profile.profile_pic else '',
@@ -319,7 +319,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             elif notif.notif_type=="story_view":
                 final_list.append({                        
                             'type':'story_view',
-                            'u':notif.from_user.username, 
+                            'u':notif.from_user.username_alias, 
                             'id':notif.story.id,
                             'dp':notif.from_user.profile.profile_pic.url if notif.from_user.profile.profile_pic else '',                          
                             'n_id':notif.id,
@@ -347,7 +347,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             for comment in story.story_comment.all():
                 final_list.append({
                     'type':'story_comment', #For the client to identify
-                    'u':comment.user.username,
+                    'u':comment.user.username_alias,
                     'comment':comment.comment,
                     'c_id':comment.id,
                     'dp':comment.user.profile.profile_pic.url if comment.user.profile.profile_pic else '',

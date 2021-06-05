@@ -152,7 +152,7 @@ def story_created_notif_celery(id):
                 print(user.username)
                 _dict = {
                     'type':'story_add',
-                    'u':instance.user.username,
+                    'u':instance.user.username_alias,
                     'u_id':instance.user.id,
                     'dp':instance.user.profile.profile_pic.url if instance.user.profile.profile_pic else "",
                     's_id':instance.id,
@@ -163,6 +163,7 @@ def story_created_notif_celery(id):
                 }
                 test.append(_dict)
                 async_to_sync(channel_layer.group_send)(user.username,_dict)
+        my_notif = StoryNotification.objects.create(story=instance , notif_type="story_add", to_user=instance.user)
         print(test)
 
 
@@ -205,7 +206,7 @@ def story_viewed_celery(instance_id, id):
         if instance.user.profile.online:
             _dict = {
                 'type':'story_view',
-                'u':user.username,
+                'u':user.username_alias,
                 'dp':user.profile.profile_pic.url if user.profile.profile_pic else '',
                 'id':instance.id,
                 'n_id':notif.id,
@@ -245,7 +246,7 @@ def story_comment_celery(id):
         if instance.story.user.profile.online:
             _dict = {
                 'type':'story_comment',
-                'u':instance.user.username,
+                'u':instance.user.username_alias,
                 'dp':instance.user.profile.profile_pic.url if instance.user.profile.profile_pic else '',
                 'comment':instance.comment,
                 'c_id':instance.id,
@@ -326,7 +327,7 @@ def comment_mention(sender, instance, **kwargs):
 
 @app.task()
 def comment_mention_celery(instance_id,id):
-        instance = User.objects.get(id=instance_id)
+        instance = Comment.objects.get(id=instance_id)
         channel_layer = get_channel_layer()
 
         user_id = id
@@ -338,7 +339,7 @@ def comment_mention_celery(instance_id,id):
         if user.profile.online:
             _dict = {
                 'type':'mention_notif',
-                'u':instance.user.username,
+                'u':instance.user.username_alias,
                 'id':instance.post.id,
                 'n_id':notif.id,
                 'time':time,
