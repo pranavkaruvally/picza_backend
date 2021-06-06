@@ -18,6 +18,9 @@ from django.contrib.auth import get_user_model
 from datetime import datetime
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
+from foo_backend.celery import app
+from .signals import get_informers_list
+
 User = get_user_model()
 
 # Right now we need two chat consumers.
@@ -714,7 +717,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         await self.get_informers_list()
         # print(informing_list)
-        await self.remove_me_from_others_lists()
+        get_informers_list.delay(self.user.id)
         
         
         
@@ -830,3 +833,21 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def dp_update(self, event):
         await self.send(text_data=json.dumps(event))
+
+
+# @app.task(name="disconnect signal")
+# def get_informers_list(id):
+#     user = User.objects.get(id=id)
+#     final_list =[]
+#     offline_inform_qs = user.profile.people_i_should_inform.all()
+#     for user in offline_inform_qs:
+#         # if user.profile.online:
+#             # final_list.append([
+#             # user.username,
+#             _dict= {   
+#                     'type':'online_status',
+#                     'u':self.user.username,
+#                     's':'offline'
+#                 }
+#             # ])
+#             async_to_sync(self.channel_layer.group_send)(user.username,_dict)
