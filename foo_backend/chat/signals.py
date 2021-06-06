@@ -389,7 +389,7 @@ def get_informers_list(id):
             # user.username,
             _dict= {   
                     'type':'online_status',
-                    'u':self.user.username,
+                    'u':user.username,
                     's':'offline'
                 }
             # ])
