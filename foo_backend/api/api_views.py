@@ -30,8 +30,16 @@ from .serializers import (
     UserStorySerializer,
 )
 from django.db.models import Q
-from chat.signals import tell_them_i_have_changed_my_dp, story_deleted_notif_celery
+from chat.signals import (
+    tell_them_i_have_changed_my_dp, 
+    story_deleted_notif_celery,
+    friend_request_accepted_notif_celery,
+    send_anonymous_notif,
+)
 import json
+
+
+
 
 User = get_user_model()
 
@@ -256,7 +264,7 @@ def handle_friend_request(request):
             frnd_rqst.status = "accepted"
             from_user.profile.friends.add(to_user)
             to_user.profile.friends.add(from_user)
-            frnd_rqst.delete()
+            friend_request_accepted_notif_celery.delay(frnd_rqst.id)
         elif action=="reject":
             frnd_rqst.status = "rejected"
             frnd_rqst.delete()
@@ -408,8 +416,11 @@ def upload_chat_media(request):
                         'id':cur_message.id,
                         'from':from_user.username  # This line is not needed in production; only for debugging
                     }
-
-        async_to_sync(channel.group_send)(other_user_username,{'type':'chat_message','message':message})
+        other_user = User.objects.get(username=other_user_username)
+        if other_user.profile.online:
+            async_to_sync(channel.group_send)(other_user_username,{'type':'chat_message','message':message})
+        else:
+            send_anonymous_notif.delay(other_user.id)
         return Response(status=200)
 
     except Exception as e:
@@ -457,7 +468,11 @@ def upload_chat_audio(request):
                         'from':from_user.username  # This line is not needed in production; only for debugging
                     }
 
-        async_to_sync(channel.group_send)(other_user_username,{'type':'chat_message','message':message})
+        other_user = User.objects.get(username=other_user_username)
+        if other_user.profile.online:
+            async_to_sync(channel.group_send)(other_user_username,{'type':'chat_message','message':message})
+        else:
+            send_anonymous_notif.delay(other_user.id)
         return Response(status=200)
 
     except Exception as e:
@@ -471,7 +486,7 @@ def upload_chat_audio(request):
 @parser_classes([MultiPartParser])
 def upload_chat_image_reply(request):
     try:
-        print(request.data)
+       
         user_id = int(request.data['u_id'])
         time = request.data['time']
         fake_id = request.data['msg_id']
@@ -479,8 +494,7 @@ def upload_chat_image_reply(request):
         file = request.data['file']
         reply_id = request.data['reply_id']
         reply_txt = request.data['reply_txt']
-        print(other_user_username)
-        print(user_id)
+        
         from_user = User.objects.get(id=user_id)
         thread = Thread.objects.get_or_new(from_user,other_user_username)
         cur_message = ChatMessage.objects.create(reply_id=int(reply_id),reply_txt=reply_txt,user=from_user, thread=thread, msg_type="reply_img",time_created=time, file=file)
@@ -509,8 +523,12 @@ def upload_chat_image_reply(request):
                         'id':cur_message.id,
                         'from':from_user.username  # This line is not needed in production; only for debugging
                     }
-
-        async_to_sync(channel.group_send)(other_user_username,{'type':'chat_reply_message','message':message,'msg_type':'reply_img'})
+        other_user = User.objects.get(username=other_user_username)
+        if other_user.profile.online:
+            async_to_sync(channel.group_send)(other_user_username,{'type':'chat_reply_message','message':message,'msg_type':'reply_img'})
+        else:
+            send_anonymous_notif.delay(other_user.id)
+        
         return Response(status=200)
 
     except Exception as e:
@@ -560,8 +578,11 @@ def upload_chat_audio_reply(request):
                         'id':cur_message.id,
                         'from':from_user.username  # This line is not needed in production; only for debugging
                     }
-
-        async_to_sync(channel.group_send)(other_user_username,{'type':'chat_reply_message','message':message,'msg_type':'reply_aud'})
+        if other_user.profile.online:
+            async_to_sync(channel.group_send)(other_user_username,{'type':'chat_reply_message','message':message,'msg_type':'reply_aud'})
+        else:
+            send_anonymous_notif.delay(other_user.id)
+        
         return Response(status=200)
 
     except Exception as e:

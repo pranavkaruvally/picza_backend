@@ -3,6 +3,7 @@ from django.db.models import Q
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils import timezone
 from django.db.models.signals import post_save
+
 # Create your models here.
 
 
@@ -20,7 +21,7 @@ class UserManager(BaseUserManager):
         user = self.model(
             email=self.normalize_email(email),
         )
-
+        user.token = "empty"
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -45,6 +46,7 @@ class UserManager(BaseUserManager):
             email,
             password=password,
         )
+      
         user.staff = True
         user.admin = True
         user.save(using=self._db)
@@ -69,6 +71,7 @@ class User(AbstractBaseUser):
     admin = models.BooleanField(default=False)
     username_alias = models.CharField(max_length=100, unique=True, null=True, blank=True) # a superuser
     about = models.TextField(default='')
+    
     #about =models.TextField(blank=True,null=True)
     # notice the absence of a "Password field", that is built in.
 
@@ -189,7 +192,7 @@ class Notification(models.Model):
     chatmsg_id = models.IntegerField(null=True)
     notif_from = models.ForeignKey(User, related_name="from_user_chat", on_delete=models.CASCADE, null=True)
     notif_to = models.ForeignKey(User, related_name="to_user_chat", on_delete=models.CASCADE)
-    notif_type = models.CharField(max_length=10,choices=NOTIF_TYPES)
+    notif_type = models.CharField(max_length=15, choices=NOTIF_TYPES)
     chat_username = models.CharField(max_length=100,null=True,blank=True)
 
 def user_directory_path(instance, filename):
@@ -273,9 +276,11 @@ class StoryNotification(models.Model):
     time_created = models.CharField(max_length=20)
     from_user = models.ForeignKey(User, on_delete=models.CASCADE,related_name="story_viewed_user", blank=True, null=True)
 
-class MentionNotification(models.Model):
-
+class MiscNotification(models.Model):
+    TYPES = (('mention','mention'),('like','like'))
+    type = models.CharField(max_length=50, choices=TYPES)
     post_id = models.IntegerField(blank = True, null=True)
     to_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="mention_to_user")
     from_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="mention_from_user")  
     time_created = models.CharField(max_length=70, null=True, blank=True)
+

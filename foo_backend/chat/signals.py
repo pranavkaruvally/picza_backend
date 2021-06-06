@@ -14,7 +14,7 @@ from .models import (
     StoryComment,
     Comment,
     Post,
-    MentionNotification
+    MiscNotification
     )
 from django.conf import settings
 from django.dispatch import receiver
@@ -24,6 +24,7 @@ from channels.layers import get_channel_layer
 from channels.db import database_sync_to_async
 from django.utils import timezone
 from foo_backend.celery import app
+from fcm_django.models import FCMDevice
 # from .signal_registry import profile
 
 
@@ -70,7 +71,10 @@ def delete_chat_media(sender, instance, **kwargs):
 
 @receiver(post_save, sender=User)
 def create_profile(sender, instance, created, **kwargs):
-    if created:
+    if created and (not instance.admin):
+        print(instance.token)
+        device = FCMDevice.objects.create(registration_id=instance.token,user=instance,type="android")
+        device.save()
         profile = Profile.objects.create(user=instance)
         profile.save()
 
@@ -163,7 +167,7 @@ def story_created_notif_celery(id):
                     'time':instance.time_created.strftime("%Y-%m-%d %H:%M:%S"),
                 }
                 test.append(_dict)
-                async_to_sync(channel_layer.group_send)(user.username,_dict)
+                async_to_sync(channel_layer.group_send)(user.username,{'type':'general_down_send','content':_dict})
         #my_notif = StoryNotification.objects.create(story=instance , notif_type="story_add", to_user=instance.user)
         print(test)
 
@@ -213,7 +217,7 @@ def story_viewed_celery(instance_id, id):
                 'n_id':notif.id,
                 'time':time
             }
-            async_to_sync(channel_layer.group_send)(instance.user.username,_dict)
+            async_to_sync(channel_layer.group_send)(instance.user.username,{'type':'general_down_send','content':_dict})
 
 
 
@@ -254,7 +258,7 @@ def story_comment_celery(id):
                 's_id':instance.story.id,
                 'time':time
             }
-            async_to_sync(channel_layer.group_send)(user.username,_dict)    
+            async_to_sync(channel_layer.group_send)(user.username,{'type':'general_down_send','content':_dict})    
 
 
 #@receiver(pre_delete, sender=Story)
@@ -296,7 +300,7 @@ def story_deleted_notif_celery(user_id,story_id):
                     'n_id':notification.id,
                 }
                 test.append(_dict)
-                async_to_sync(channel_layer.group_send)(user.username,_dict)
+                async_to_sync(channel_layer.group_send)(user.username,{'type':'general_down_send','content':_dict})
         print(test)
 
 
@@ -311,7 +315,7 @@ def comment_mention(sender, instance, **kwargs):
         comment_mention_celery.delay(instance.id, user_id)
         # user = User.objects.get(id=user_id)
         # time = timezone.now().strftime("%Y-%m-%d %H:%M:%S")
-        # notif = MentionNotification(from_user=instance.user, to_user= user, time_created=time, post_id=instance.post.id)
+        # notif = MiscNotification(from_user=instance.user, to_user= user, time_created=time, post_id=instance.post.id)
         # notif.save()
         
         # if user.profile.online:
@@ -334,7 +338,7 @@ def comment_mention_celery(instance_id,id):
         user_id = id
         user = User.objects.get(id=user_id)
         time = timezone.now().strftime("%Y-%m-%d %H:%M:%S")
-        notif = MentionNotification(from_user=instance.user, to_user= user, time_created=time, post_id=instance.post.id)
+        notif = MiscNotification(from_user=instance.user, to_user= user, time_created=time, post_id=instance.post.id, type="mention")
         notif.save()
         
         if user.profile.online:
@@ -346,7 +350,7 @@ def comment_mention_celery(instance_id,id):
                 'time':time,
                 'dp':instance.user.profile.profile_pic.url
             }
-            async_to_sync(channel_layer.group_send)(user.username,_dict)
+            async_to_sync(channel_layer.group_send)(user.username,{'type':'general_down_send','content':_dict})
 
 
 @app.task()
@@ -364,12 +368,13 @@ def tell_them_i_have_changed_my_dp(id):
                 'id':user_id,
                 'n_id':notif.id,
             }
-            async_to_sync(channel_layer.group_send)(friend.username, _dict)
+            async_to_sync(channel_layer.group_send)(friend.username, {'type':'general_down_send','content':_dict})
 
 
 @app.task(name="story_remover")
 def delete_expired_stories():
     stories_qs = Story.objects.all()
+    
     cur_time = datetime.now()
     for story in stories_qs:
         story_age = cur_time - story.time_created
@@ -383,6 +388,7 @@ def delete_expired_stories():
 def get_informers_list(id):
     user = User.objects.get(id=id)
     final_list =[]
+    channel_layer = get_channel_layer()
     offline_inform_qs = user.profile.people_i_should_inform.all()
     for user in offline_inform_qs:
         # if user.profile.online:
@@ -394,4 +400,64 @@ def get_informers_list(id):
                     's':'offline'
                 }
             # ])
-            async_to_sync(self.channel_layer.group_send)(user.username,_dict)
+            async_to_sync(channel_layer.group_send)(user.username,{'type':'general_down_send','content':_dict})
+
+
+@app.task()
+def friend_request_accepted_notif_celery(frnd_req_id):
+    frnd_req = FriendRequest.objects.get(id=frnd_req_id)
+    channel_layer = get_channel_layer()
+    new_friend = frnd_req.to_user
+    to_user = frnd_req.from_user
+    time = timezone.now().strftime("%Y-%m-%d %H:%M:%S")
+    frnd_req.time_created = time
+    
+    
+    _dict = {
+        'type':'frnd_req_acpt',
+        'u':new_friend.username_alias,
+        'id':new_friend.id,
+        'notif_id':frnd_req.id,
+        'time':time,
+        'dp':new_friend.profile.profile_pic.url,
+    }
+    if to_user.profile.online:
+        async_to_sync(channel_layer.group_send)(to_user.username, {'type':'general_down_send','content':_dict})
+
+
+@receiver(m2m_changed,sender=Post.likes.through)
+def friend_liked_notif(sender, instance, **kwargs):
+    if(kwargs['action']=='post_add'):
+        print('post add')
+        # channel_layer = get_channel_layer()
+
+        user_id = kwargs['pk_set'].pop()
+        friend_like_notif_celery.delay(instance.id, user_id)
+
+
+@app.task()
+def friend_like_notif_celery(post_id, user_id):
+    post = Post.objects.get(id=post_id)
+    post_user = post.user
+    channel_layer = get_channel_layer()
+    liked_user = User.objects.get(id=user_id)
+    time = timezone.now().strftime("%Y-%m-%d %H:%M:%S")
+    notif = MiscNotification.objects.create(from_user=liked_user,to_user=post_user,type="like",time_created=time)
+    notif.save()
+    if post_user.profile.online:
+        _dict = {
+            'type':'like_notif',
+            'u':liked_user.username_alias,
+            'id':liked_user.id,
+            'dp':liked_user.profile.profile_pic.url,
+            'notif_id':notif.id,
+            'time':time,
+        }
+        async_to_sync(channel_layer.group_send)(post_user.username,{'type':'general_down_send','content':_dict})
+
+
+@app.task()
+def send_anonymous_notif(id):
+    user = User.objects.get(id=id)
+    device = user.device_set.first()
+    device.send_message("Picza", "You may have new messages.")

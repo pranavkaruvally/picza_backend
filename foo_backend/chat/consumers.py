@@ -11,7 +11,7 @@ from .models import (
     Notification,
     StoryNotification,
     StoryComment,
-    MentionNotification,
+    MiscNotification,
 )
 from django.utils import timezone
 from django.contrib.auth import get_user_model
@@ -19,7 +19,7 @@ from datetime import datetime
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from foo_backend.celery import app
-from .signals import get_informers_list
+from .signals import get_informers_list, send_anonymous_notif
 
 User = get_user_model()
 
@@ -119,6 +119,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             pending_story_notifs = await self.get_pending_story_notifications()
             pending_story_comment_notifs = await self.get_pending_story_comment_notification()
             pending_mentions = await self.get_mentions()
+            pending_acpt_notifs = await self.get_pending_accept_notifs()
 
             
             if len(informing_list)>0:
@@ -128,6 +129,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
                         msg[1]
                     )
             
+            if len(pending_acpt_notifs)>0:
+                for msg in pending_acpt_notifs:
+                    await self.send(text_data=json.dumps(msg))
+
+
             if len(pending_msg_status)>0:
                 for msg in pending_msg_status:
                     await self.send(text_data=json.dumps(msg))
@@ -199,18 +205,28 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_mentions(self):
         final_list = []
-        mentions_qs = MentionNotification.objects.filter(to_user=self.user)
+        qs = MiscNotification.objects.filter(to_user=self.user)
 
-        for mention in mentions_qs:
-            final_list.append({
-                'type':'mention_notif',
-                'u':mention.from_user.username,
-                'id':mention.post_id,
-                'n_id':mention.id,
-                'time':mention.time_created,
-                'dp':mention.from_user.profile.profile_pic.url,
-            })
-        
+        for obj in qs:
+            if obj.type=="mention":
+                final_list.append({
+                    'type':'mention_notif',
+                    'u':obj.from_user.username_alias,
+                    'id':obj.post_id,
+                    'n_id':obj.id,
+                    'time':obj.time_created,
+                    'dp':obj.from_user.profile.profile_pic.url,
+                })
+            elif obj.type == "like":
+                final_list.append({
+                    'type':'like_notif',
+                    'u':obj.from_user.username,
+                    'id':obj.from_user.id,
+                    'notif_id':obj.id,
+                    'time':obj.time_created,
+                    'dp':obj.from_user.profile.profile_pic.url,
+                })
+                
         return final_list
 
 
@@ -245,7 +261,30 @@ class ChatConsumer(AsyncWebsocketConsumer):
         requests = []
 
         for request in request_qs:
-            requests.append({"type":"notification","username":request.from_user.username_alias, "user_id":request.from_user.id, "id":request.id, 'time':request.time_created,'dp':request.from_user.profile.profile_pic.url})
+            requests.append(
+                {"type":"notification",
+                "username":request.from_user.username_alias, 
+                "user_id":request.from_user.id, 
+                "id":request.id, 
+                'time':request.time_created,
+                'dp':request.from_user.profile.profile_pic.url})
+
+        return requests
+
+    @database_sync_to_async
+    def get_pending_accept_notifs(self):
+        request_qs = FriendRequest.objects.filter(from_user=self.user,status="accepted")
+
+        requests = []
+
+        for request in request_qs:
+            requests.append(
+                {"type":"frnd_req_acpt",
+                "u":request.to_user.username_alias, 
+                "id":request.to_user.id, 
+                "notif_id":request.id, 
+                "time":request.time_created,
+                "dp":request.to_user.profile.profile_pic.url})
 
         return requests
 
@@ -388,6 +427,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.delete_mention_notification(text_data_json['m_r'])
         elif 'f_r' in text_data_json:
             await self.receive_friend_request(text_data_json['f_r'])
+        elif 'a_r' in text_data_json:
+            await self.delete_friend_request(text_data_json['a_r'])
         elif 's_r' in text_data_json:
             await self.delete_story_notification(text_data_json['s_r'])
         elif 's_n_r' in text_data_json:
@@ -434,7 +475,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 _id = text_data_json['id']
                 if(text_data_json['type']=='msg'):           # This is the username of the user to which the message is to be sent
                     msg = text_data_json['message']
-
+                   
                     chat_msg_id,notif_id = await self.create_chat_message(message=msg,to=to,time=time_str,ref_id=_id)
                 
                     message = {
@@ -455,13 +496,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
                         }
                         )
                     )
-                    await self.channel_layer.group_send(
-                    to,
-                    {
-                        'type':'chat_message',
-                        'message': message
-                    }
-                    )
+                    to_user, status = await self.get_user_status_from_username(to)
+                    if status:
+                        await self.channel_layer.group_send(
+                        to,
+                        {
+                            'type':'chat_message',
+                            'message': message
+                        }
+                        )
+                    else:
+                        id = await self.get_user_id(to_user)
+                        send_anonymous_notif.delay(id)
                 
                 elif(text_data_json['type']=='reply_txt'):           # This is the username of the user to which the message is to be sent
                     msg = text_data_json['message']
@@ -488,14 +534,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
                         }
                         )
                     )
-                    await self.channel_layer.group_send(
-                    to,
-                    {
-                        'type':'chat_reply_message',
-                        'message': message,
-                        'msg_type':'reply_txt'
-                    }
-                    )
+                    to_user, status = await self.get_user_status_from_username(to)
+                    if status:
+                        await self.channel_layer.group_send(
+                        to,
+                        {
+                            'type':'chat_reply_message',
+                            'message': message,
+                            'msg_type':'reply_txt'
+                        }
+                        )
+                    else:
+                        id = await self.get_user_id(to_user)
+                        send_anonymous_notif.delay(id)
                 
                 
                 # elif(text_data_json['type']=='aud'):
@@ -563,7 +614,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 #             'message': message
                 #         }
                 #     )
-
+    @database_sync_to_async
+    def get_user_id(self, user):
+        return user.id
 
     @database_sync_to_async
     def add_user_to_recipients(self,msg_id):
@@ -644,6 +697,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except Exception as e:
             print(e)
 
+
+    @database_sync_to_async
+    def delete_friend_request(self, id):
+        try:
+            notif = FriendRequest.objects.get(id=id)
+            notif.delete()
+        except Exception as e:
+            print(e)
+
     @database_sync_to_async
     def delete_story_notification(self, id):
         try:
@@ -664,7 +726,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def delete_mention_notification(self, id):
         try:
-            notif = MentionNotification.objects.get(id=id)
+            notif = MiscNotification.objects.get(id=id)
             notif.delete()
         except Exception as e:
             print(e)
@@ -793,20 +855,20 @@ class ChatConsumer(AsyncWebsocketConsumer):
         print("reached here")
         await self.send(text_data=json.dumps(event))
 
-    async def story_add(self,event):
-        print(event)
-        print(self.room_group_name)
-        await self.send(text_data=json.dumps(event))
+    # async def story_add(self,event):
+    #     print(event)
+    #     print(self.room_group_name)
+    #     await self.send(text_data=json.dumps(event))
 
     async def story_delete(self,event):
         print(event)
         print(self.room_group_name)
         await self.send(text_data=json.dumps(event))
 
-    async def online_status(self,event):
-        print(event)
-        print(self.room_group_name)
-        await self.send(text_data=json.dumps(event))
+    # async def online_status(self,event):
+    #     print(event)
+    #     print(self.room_group_name)
+    #     await self.send(text_data=json.dumps(event))
 
 
     async def story_view(self,event):
@@ -834,6 +896,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def dp_update(self, event):
         await self.send(text_data=json.dumps(event))
+    
+    async def general_down_send(self, event):
+        await self.send(text_data=json.dumps(event['content']))
 
 
 # @app.task(name="disconnect signal")
