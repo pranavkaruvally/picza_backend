@@ -307,7 +307,7 @@ def get_status(request):
         cur_id = request.query_params['id']
         cur_user = User.objects.get(id=int(cur_id))
         user = User.objects.get(username=username)
-        if cur_user in user.profile.yall_cant_see_me.all():
+        if (cur_user in user.profile.yall_cant_see_me.all()) or user.profile.general_last_seen_off:
             return Response(status=200, data={"status":"nope"})
         user.profile.people_i_should_inform.add(cur_user)
         user.save()

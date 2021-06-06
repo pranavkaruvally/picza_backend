@@ -714,7 +714,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         return User.objects.get(username=username)
 
     async def disconnect(self, close_code):
-
+        get_informers_list.delay(self.user.id)
         
         await self.update_user_offline(self.user)
         await self.channel_layer.group_discard(
@@ -723,7 +723,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             )
         await self.get_informers_list()
         # print(informing_list)
-        get_informers_list.delay(self.user.id)
+        
         
         
         
