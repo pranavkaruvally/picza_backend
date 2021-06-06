@@ -36,10 +36,10 @@ User = get_user_model()
 
 
 # Signals to delete the media associated with a model if an instance is deleted.
-@receiver(post_delete, sender = User)
+@receiver(pre_delete, sender = Profile)
 def delete_user_media(sender, instance, **kwargs):
-    if(instance.profile.profile_pic):
-        instance.profile.profile_pic.delete(False)
+    if(instance.profile_pic):
+        instance.profile_pic.delete(False)
 
 
 @receiver(post_delete, sender = Story)

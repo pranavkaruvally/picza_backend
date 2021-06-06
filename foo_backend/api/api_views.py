@@ -695,6 +695,7 @@ def update_user_details(request):
         user_id = int(request.data['id'])
         file = request.data['file']
         cur_user = User.objects.get(id=user_id)
+        cur_user.profile.profile_pic.delete(False)
         cur_user.profile.profile_pic = file
         cur_user.profile.save()
         cur_user.about=about
