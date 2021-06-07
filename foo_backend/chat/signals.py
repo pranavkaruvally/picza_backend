@@ -79,10 +79,10 @@ def create_profile(sender, instance, created, **kwargs):
         profile.save()
 
 
-@receiver(post_save, sender=FriendRequest)
-def send_request(sender, instance, created, **kwargs):
-    if created:
-        send_request_celery.delay(instance.id)
+# @receiver(post_save, sender=FriendRequest)
+# def send_request(sender, instance, created, **kwargs):
+#     if created:
+#         send_request_celery.delay(instance.id)
         # if instance.status == "pending":
         #     channel_layer = get_channel_layer()
         #     print(channel_layer)
@@ -116,7 +116,7 @@ def send_request_celery(id):
                     'time':instance.time_created,
                     })
 
-@receiver(post_save, sender=Story)
+# @receiver(post_save, sender=Story)
 def story_created_notif(sender, instance, created, **kwargs):
     if created:
         story_created_notif_celery.delay(instance.id)
@@ -221,7 +221,7 @@ def story_viewed_celery(instance_id, id):
 
 
 
-@receiver(post_save,sender=StoryComment)
+# @receiver(post_save,sender=StoryComment)
 def story_comment(sender, instance, **kwargs):
     if(kwargs['created']==True):
         story_comment_celery.delay(instance.id)
@@ -441,6 +441,8 @@ def friend_like_notif_celery(post_id, user_id):
     post_user = post.user
     channel_layer = get_channel_layer()
     liked_user = User.objects.get(id=user_id)
+    if liked_user==post_user:
+        return 
     time = timezone.now().strftime("%Y-%m-%d %H:%M:%S")
     notif = MiscNotification.objects.create(from_user=liked_user,to_user=post_user,type="like",time_created=time)
     notif.save()

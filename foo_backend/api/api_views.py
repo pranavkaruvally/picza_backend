@@ -35,6 +35,9 @@ from chat.signals import (
     story_deleted_notif_celery,
     friend_request_accepted_notif_celery,
     send_anonymous_notif,
+    send_request_celery,
+    story_created_notif_celery,
+    story_comment_celery
 )
 import json
 
@@ -246,6 +249,7 @@ def send_friend_request(request):
             time_created=time,
             )
         friend_request.save()
+        send_request_celery.delay(friend_request.id)
         return Response(status=200)
     except Exception as e:
         print(e)
@@ -302,6 +306,7 @@ def story_upload_handler(request):
         user = User.objects.get(username=username)
         story = Story.objects.create(file=file, user=user, caption=caption)
         story.save()
+        story_created_notif_celery.delay(story.id)
         return Response(status=200)
     except Exception as e:
         print(e)
@@ -359,7 +364,7 @@ def user_story_commented(request):
         commentInstance = StoryComment.objects.create(
             user=user, story=story, comment=request.data['comment'])
         commentInstance.save()
-
+        story_comment_celery.delay(commentInstance.id)
         return Response(status=200)
     except Exception as e:
         print(e)
