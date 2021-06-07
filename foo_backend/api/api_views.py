@@ -268,6 +268,7 @@ def handle_friend_request(request):
             frnd_rqst.status = "accepted"
             from_user.profile.friends.add(to_user)
             to_user.profile.friends.add(from_user)
+            frnd_rqst.save()
             friend_request_accepted_notif_celery.delay(frnd_rqst.id)
         elif action=="reject":
             frnd_rqst.status = "rejected"
