@@ -461,5 +461,5 @@ def friend_like_notif_celery(post_id, user_id):
 @app.task()
 def send_anonymous_notif(id):
     user = User.objects.get(id=id)
-    device = user.device_set.first()
+    device = user.fcmdevice_set.first()
     device.send_message("Picza", "You may have new messages.")
