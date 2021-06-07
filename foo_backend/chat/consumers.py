@@ -96,8 +96,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):        
 
         username = self.scope['url_route']['kwargs']['username']
-        self.room_group_name = int(username)
-        self.user = await self.get_user_from_uprn(username)
+        self.room_group_name = username
+        self.user = await self.get_user_from_uprn(int(username))
         print(self.user.username)
         status = await self.update_user_online(self.user)
         self.recent_chat_with = ""
@@ -411,7 +411,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             should_inform, chat_id ,chat_user, id = await self.add_user_to_recipients(msg_id)
             if should_inform:
                 await self.channel_layer.group_send(
-                                                    chat_user.uprn,
+                                                    str(chat_user.uprn),
                                                     {
                                                         'type':'chat_received_notif',
                                                         'message':{                                                            
@@ -445,7 +445,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     text_data_json.pop('to')
                     text_data_json['from'] = self.room_group_name
                     await self.channel_layer.group_send(
-                        to_user.uprn,
+                        str(to_user.uprn),
                         text_data_json
                     )
                 
@@ -458,7 +458,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 self.recent_chat_with  = to
                 text_data_json.pop("to")
                 await self.channel_layer.group_send(
-                        to_user.uprn,
+                        str(to_user.uprn),
                         text_data_json
                     )
             elif text_data_json['type'] == "chat_delete":
@@ -469,7 +469,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 text_data_json.pop('to')
                 await self.create_chat_delete_notif(to,text_data_json['id'])
                 await self.channel_layer.group_send(
-                        to_user.uprn,
+                        str(to_user.uprn),
                         text_data_json
                     )
                 
@@ -503,7 +503,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     to_user, status = await self.get_user_status_from_username(to)
                     if status:
                         await self.channel_layer.group_send(
-                        to_user.uprn,
+                        str(to_user.uprn),
                         {
                             'type':'chat_message',
                             'message': message
@@ -541,7 +541,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     to_user, status = await self.get_user_status_from_username(to)
                     if status:
                         await self.channel_layer.group_send(
-                        to_user.uprn,
+                        str(to_user.uprn),
                         {
                             'type':'chat_reply_message',
                             'message': message,
@@ -787,7 +787,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 self.room_group_name,
                 self.channel_name
             )
-        await self.get_informers_list()
+        # await self.get_informers_list()
         # print(informing_list)
         
         
