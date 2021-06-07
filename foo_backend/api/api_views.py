@@ -653,8 +653,9 @@ def dob_upload(request):
         cur_user.l_name = l_name
         cur_user.dob = dob
         cur_user.profile.profile_pic = file
-        cur_user.profile.save()
+        cur_user.profile.save()       
         cur_user.save()
+        tell_them_i_have_changed_my_dp.delay(cur_user.id)
         return Response(status=200)
 
     except:

@@ -859,32 +859,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         print("reached here")
         await self.send(text_data=json.dumps(event))
 
-    # async def story_add(self,event):
-    #     print(event)
-    #     print(self.room_group_name)
-    #     await self.send(text_data=json.dumps(event))
 
-    async def story_delete(self,event):
-        print(event)
-        print(self.room_group_name)
-        await self.send(text_data=json.dumps(event))
-
-    # async def online_status(self,event):
-    #     print(event)
-    #     print(self.room_group_name)
-    #     await self.send(text_data=json.dumps(event))
-
-
-    async def story_view(self,event):
-        print(event)
-        print(self.room_group_name)
-        await self.send(text_data=json.dumps(event))
-
-    async def story_comment(self,event):
-        print(event)
-        print(self.room_group_name)
-        await self.send(text_data=json.dumps(event))
-
+    
     async def server_response(self,event):
         print(event)
         event.pop("type")
@@ -895,11 +871,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         
         await self.send(text_data=json.dumps(event))
 
-    async def mention_notif(self, event):
-        await self.send(text_data=json.dumps(event))
-
-    async def dp_update(self, event):
-        await self.send(text_data=json.dumps(event))
+   
     
     async def general_down_send(self, event):
         await self.send(text_data=json.dumps(event['content']))
