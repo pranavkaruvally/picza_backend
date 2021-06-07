@@ -360,7 +360,7 @@ def tell_them_i_have_changed_my_dp(id):
     friends_qs = instance.profile.friends.all()
     channel_layer = get_channel_layer()
     for friend in friends_qs:
-        notif = Notification(notif_to=friend,ref_id=str(user_id),type="dp_notif")
+        notif = Notification(notif_to=friend,ref_id=str(user_id),notif_type="dp_notif")
         notif.save()
         if friend.profile.online:
             _dict = {

@@ -186,7 +186,7 @@ class ChatMessage(models.Model):
 
 class Notification(models.Model):
 
-    NOTIF_TYPES = (('seen','seen'),('received','received'),('s_reached','s_reached'),('delete','delete'))
+    NOTIF_TYPES = (('seen','seen'),('received','received'),('s_reached','s_reached'),('delete','delete'),('dp_notif','dp_notif'))
 
     ref_id = models.CharField(null=True,max_length=20)
     chatmsg_id = models.IntegerField(null=True)
