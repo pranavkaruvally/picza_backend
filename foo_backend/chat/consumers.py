@@ -96,7 +96,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):        
 
         username = self.scope['url_route']['kwargs']['username']
-        self.room_group_name = username
+        self.room_group_name = int(username)
         self.user = await self.get_user_from_uprn(username)
         print(self.user.username)
         status = await self.update_user_online(self.user)
