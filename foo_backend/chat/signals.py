@@ -386,17 +386,17 @@ def delete_expired_stories():
 
 @app.task(name="disconnect signal")
 def get_informers_list(id):
-    user = User.objects.get(id=id)
+    _user = User.objects.get(id=id)
     final_list =[]
     channel_layer = get_channel_layer()
-    offline_inform_qs = user.profile.people_i_should_inform.all()
+    offline_inform_qs = _user.profile.people_i_should_inform.all()
     for user in offline_inform_qs:
         # if user.profile.online:
             # final_list.append([
             # user.username,
             _dict= {   
                     'type':'online_status',
-                    'u':user.username,
+                    'u':_user.username,
                     's':'offline'
                 }
             # ])
