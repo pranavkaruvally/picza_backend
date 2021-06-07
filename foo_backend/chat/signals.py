@@ -107,7 +107,7 @@ def send_request_celery(id):
             if instance.to_user.profile.online:
                 print("hes online")
                 # send_notif(instance.to_user.username)
-                async_to_sync(channel_layer.group_send)(instance.to_user.username, {
+                async_to_sync(channel_layer.group_send)(instance.to_user.uprn, {
                     "type": "notification", 
                     "username": instance.from_user.username, 
                     'user_id': instance.from_user.id, 
@@ -167,7 +167,7 @@ def story_created_notif_celery(id):
                     'time':instance.time_created.strftime("%Y-%m-%d %H:%M:%S"),
                 }
                 test.append(_dict)
-                async_to_sync(channel_layer.group_send)(user.username,{'type':'general_down_send','content':_dict})
+                async_to_sync(channel_layer.group_send)(user.uprn,{'type':'general_down_send','content':_dict})
         #my_notif = StoryNotification.objects.create(story=instance , notif_type="story_add", to_user=instance.user)
         print(test)
 
@@ -217,7 +217,7 @@ def story_viewed_celery(instance_id, id):
                 'n_id':notif.id,
                 'time':time
             }
-            async_to_sync(channel_layer.group_send)(instance.user.username,{'type':'general_down_send','content':_dict})
+            async_to_sync(channel_layer.group_send)(instance.user.uprn,{'type':'general_down_send','content':_dict})
 
 
 
@@ -258,7 +258,7 @@ def story_comment_celery(id):
                 's_id':instance.story.id,
                 'time':time
             }
-            async_to_sync(channel_layer.group_send)(user.username,{'type':'general_down_send','content':_dict})    
+            async_to_sync(channel_layer.group_send)(user.uprn,{'type':'general_down_send','content':_dict})    
 
 
 #@receiver(pre_delete, sender=Story)
@@ -300,7 +300,7 @@ def story_deleted_notif_celery(user_id,story_id):
                     'n_id':notification.id,
                 }
                 test.append(_dict)
-                async_to_sync(channel_layer.group_send)(user.username,{'type':'general_down_send','content':_dict})
+                async_to_sync(channel_layer.group_send)(user.uprn,{'type':'general_down_send','content':_dict})
         print(test)
 
 
@@ -350,7 +350,7 @@ def comment_mention_celery(instance_id,id):
                 'time':time,
                 'dp':instance.user.profile.profile_pic.url
             }
-            async_to_sync(channel_layer.group_send)(user.username,{'type':'general_down_send','content':_dict})
+            async_to_sync(channel_layer.group_send)(user.uprn,{'type':'general_down_send','content':_dict})
 
 
 @app.task()
@@ -368,7 +368,7 @@ def tell_them_i_have_changed_my_dp(id):
                 'id':user_id,
                 'n_id':notif.id,
             }
-            async_to_sync(channel_layer.group_send)(friend.username, {'type':'general_down_send','content':_dict})
+            async_to_sync(channel_layer.group_send)(friend.uprn, {'type':'general_down_send','content':_dict})
 
 
 @app.task(name="story_remover")
@@ -400,7 +400,7 @@ def get_informers_list(id):
                     's':'offline'
                 }
             # ])
-            async_to_sync(channel_layer.group_send)(user.username,{'type':'general_down_send','content':_dict})
+            async_to_sync(channel_layer.group_send)(user.uprn,{'type':'general_down_send','content':_dict})
 
 
 @app.task()
@@ -422,7 +422,7 @@ def friend_request_accepted_notif_celery(frnd_req_id):
         'dp':new_friend.profile.profile_pic.url,
     }
     if to_user.profile.online:
-        async_to_sync(channel_layer.group_send)(to_user.username, {'type':'general_down_send','content':_dict})
+        async_to_sync(channel_layer.group_send)(to_user.uprn, {'type':'general_down_send','content':_dict})
 
 
 @receiver(m2m_changed,sender=Post.likes.through)
@@ -455,7 +455,7 @@ def friend_like_notif_celery(post_id, user_id):
             'notif_id':notif.id,
             'time':time,
         }
-        async_to_sync(channel_layer.group_send)(post_user.username,{'type':'general_down_send','content':_dict})
+        async_to_sync(channel_layer.group_send)(post_user.uprn,{'type':'general_down_send','content':_dict})
 
 
 @app.task()

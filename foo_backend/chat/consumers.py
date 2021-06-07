@@ -97,7 +97,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         username = self.scope['url_route']['kwargs']['username']
         self.room_group_name = username
-        self.user = await self.get_user_from_username(username)
+        self.user = await self.get_user_from_uprn(username)
         print(self.user.username)
         status = await self.update_user_online(self.user)
         self.recent_chat_with = ""
@@ -411,7 +411,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             should_inform, chat_id ,chat_user, id = await self.add_user_to_recipients(msg_id)
             if should_inform:
                 await self.channel_layer.group_send(
-                                                    chat_user.username,
+                                                    chat_user.uprn,
                                                     {
                                                         'type':'chat_received_notif',
                                                         'message':{                                                            
@@ -445,27 +445,31 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     text_data_json.pop('to')
                     text_data_json['from'] = self.room_group_name
                     await self.channel_layer.group_send(
-                        to,
+                        to_user.uprn,
                         text_data_json
                     )
                 
                     
             elif text_data_json['type']=='typing_status':
+                to_user, status = await self.get_user_status_from_username(text_data_json['to'])
+
                 text_data_json['from'] = self.room_group_name
                 to = text_data_json['to']
                 self.recent_chat_with  = to
                 text_data_json.pop("to")
                 await self.channel_layer.group_send(
-                        to,
+                        to_user.uprn,
                         text_data_json
                     )
             elif text_data_json['type'] == "chat_delete":
+                to_user, status = await self.get_user_status_from_username(text_data_json['to'])
+
                 text_data_json['from'] = self.room_group_name
                 to = text_data_json['to']
                 text_data_json.pop('to')
                 await self.create_chat_delete_notif(to,text_data_json['id'])
                 await self.channel_layer.group_send(
-                        to,
+                        to_user.uprn,
                         text_data_json
                     )
                 
@@ -499,7 +503,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     to_user, status = await self.get_user_status_from_username(to)
                     if status:
                         await self.channel_layer.group_send(
-                        to,
+                        to_user.uprn,
                         {
                             'type':'chat_message',
                             'message': message
@@ -537,7 +541,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     to_user, status = await self.get_user_status_from_username(to)
                     if status:
                         await self.channel_layer.group_send(
-                        to,
+                        to_user.uprn,
                         {
                             'type':'chat_reply_message',
                             'message': message,
@@ -772,8 +776,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps(event))
 
     @database_sync_to_async
-    def get_user_from_username(self, username):
-        return User.objects.get(username=username)
+    def get_user_from_uprn(self, uprn):
+        return User.objects.get(uprn=uprn)
 
     async def disconnect(self, close_code):
         get_informers_list.delay(self.user.id)
@@ -791,7 +795,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         
 
         if self.recent_chat_with != "":
-            data =  {'from':self.room_group_name,
+            data =  {'from':self.user.username,
                     'type': 'typing_status',
                     'status': 'stopped',}
             print(self.recent_chat_with)

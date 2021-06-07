@@ -423,7 +423,7 @@ def upload_chat_media(request):
                     }
         other_user = User.objects.get(username=other_user_username)
         if other_user.profile.online:
-            async_to_sync(channel.group_send)(other_user_username,{'type':'chat_message','message':message})
+            async_to_sync(channel.group_send)(other_user.uprn,{'type':'chat_message','message':message})
         else:
             send_anonymous_notif.delay(other_user.id)
         return Response(status=200)
@@ -475,7 +475,7 @@ def upload_chat_audio(request):
 
         other_user = User.objects.get(username=other_user_username)
         if other_user.profile.online:
-            async_to_sync(channel.group_send)(other_user_username,{'type':'chat_message','message':message})
+            async_to_sync(channel.group_send)(other_user.uprn,{'type':'chat_message','message':message})
         else:
             send_anonymous_notif.delay(other_user.id)
         return Response(status=200)
@@ -530,7 +530,7 @@ def upload_chat_image_reply(request):
                     }
         other_user = User.objects.get(username=other_user_username)
         if other_user.profile.online:
-            async_to_sync(channel.group_send)(other_user_username,{'type':'chat_reply_message','message':message,'msg_type':'reply_img'})
+            async_to_sync(channel.group_send)(other_user.uprn,{'type':'chat_reply_message','message':message,'msg_type':'reply_img'})
         else:
             send_anonymous_notif.delay(other_user.id)
         
@@ -584,7 +584,7 @@ def upload_chat_audio_reply(request):
                         'from':from_user.username  # This line is not needed in production; only for debugging
                     }
         if other_user.profile.online:
-            async_to_sync(channel.group_send)(other_user_username,{'type':'chat_reply_message','message':message,'msg_type':'reply_aud'})
+            async_to_sync(channel.group_send)(other_user.uprn,{'type':'chat_reply_message','message':message,'msg_type':'reply_aud'})
         else:
             send_anonymous_notif.delay(other_user.id)
         
