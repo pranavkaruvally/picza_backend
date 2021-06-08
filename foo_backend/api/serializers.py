@@ -136,6 +136,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
                 if request.first().status == "pending":
                     representation['requestStatus'] = "pending_acceptance"
                     representation['notif_id'] = request.first().id
+                elif request.first().status == "accepted":
+                    representation['requestStatus'] = "accepted"
+                elif request.first().status == "rejected":
+                    representation['requestStatus'] = "rejected"
 
         elif request.count()==0:
             if cur_user in instance.profile.friends.all():
