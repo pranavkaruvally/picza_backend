@@ -180,6 +180,21 @@ class PostDetailSerializer(serializers.ModelSerializer):
         else:
             representation['hasLiked'] = False
         representation['likeCount'] = instance.likes.count()
+        like_dps = []
+        if instance.likes.count()>0:
+           
+            if instance.likes.count()<=3:
+                for user in instance.likes.all():
+                    like_dps.append(user.profile.profile_pic.url)
+            else:
+                index = 1
+                for user in instance.likes.all().reverse():
+                    if index<=3:
+                        like_dps.append(user.profile.profile_pic.url)
+                        index+=1
+                    else:
+                        break
+        representation['recent_likes'] = like_dps
         return representation
 
 

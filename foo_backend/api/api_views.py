@@ -308,7 +308,7 @@ def story_upload_handler(request):
         story = Story.objects.create(file=file, user=user, caption=caption)
         story.save()
         story_created_notif_celery.delay(story.id)
-        return Response(status=200)
+        return Response(status=200,data={"url":story.file.url,"s_id":story.id})
     except Exception as e:
         print(e)
         return Response(status=400)
@@ -781,4 +781,16 @@ def delete_account(request):
 
     except Exception as e:
         print(e)
+        return Response(status=400)
+
+
+@api_view(['GET'])
+def friends_list(request):
+    try:
+        id = int(request.query_params['id'])
+        user = User.objects.get(id=id)
+        friends_qs =  user.profile.friends.all()
+        serialized = UserCustomSerializer(friends_qs, many=True)
+        return Response(status=200, data=serialized.data)
+    except Exception as e:
         return Response(status=400)
