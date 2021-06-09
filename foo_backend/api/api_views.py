@@ -785,4 +785,5 @@ def liked_users_list(request):
         serialized = UserCustomSerializer(likes, many=True)
         return Response(status=200, data=serialized.data)
     except Exception as e:
+        print(e)
         return Response(status=400)
