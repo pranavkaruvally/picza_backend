@@ -39,7 +39,8 @@ urlpatterns = [
     path('delete_account', api_views.delete_account, name="account_delete"),
     path('last_seen', api_views.add_to_last_seen, name='add_last_seen_personal'),
     path('last_seen_general', api_views.switch_off_last_seen, name='switch_off_last_seen_all'),
-    path('friends', api_views.friends_list, name="friends-list"),
+    path('friends_list', api_views.friends_list, name="friends-list"),
+    path('likes_list', api_views.liked_users_list, name="likes_list")
 
 
 ]

@@ -595,25 +595,6 @@ def upload_chat_audio_reply(request):
         print(e)
         return Response(status=400)
 
-@api_view(['GET'])
-def get_user_from_friends_list(request):
-    try:
-        param = request.query_params['name']
-        print(param)
-        id= request.query_params['id']
-        cur_user =  User.objects.get(id=int(id))
-        friends = cur_user.profile.friends.all()
-        qs = friends.filter(Q(username__icontains=param)
-                                 | Q(f_name__icontains=param))
-        # .filter(l_name__icontains=param)
-        serialized = UserCustomSerializer(qs,many=True)
-        print(request.query_params)
-        # print(data)
-        return Response(status=200, data=serialized.data)
-    except Exception as e:
-        print(e)
-        return Response(status=400)
-
 
 @api_view(['GET'])
 def people_you_may_know(request):
@@ -791,6 +772,17 @@ def friends_list(request):
         user = User.objects.get(id=id)
         friends_qs =  user.profile.friends.all()
         serialized = UserCustomSerializer(friends_qs, many=True)
+        return Response(status=200, data=serialized.data)
+    except Exception as e:
+        return Response(status=400)
+
+@api_view(['GET'])
+def liked_users_list(request):
+    try:
+        id = int(request.query_params['post_id'])
+        post = Post.objects.get(id=id)
+        likes = post.likes.all()
+        serialized = UserCustomSerializer(likes, many=True)
         return Response(status=200, data=serialized.data)
     except Exception as e:
         return Response(status=400)
