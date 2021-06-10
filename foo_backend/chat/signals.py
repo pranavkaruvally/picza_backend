@@ -379,7 +379,7 @@ def delete_expired_stories():
     for story in stories_qs:
         story_age = cur_time - story.time_created
         if(story_age >= timedelta(hours=1)):
-            story_deleted_notif_celery(story.user.id,story.id)
+           
             print(story)
             story.delete()
             

@@ -193,7 +193,7 @@ def add_comment(request, username):
         comment = Comment.objects.create(
             user=user, post=post, comment=json.dumps(request.data['comment']))
         for i in request.data['mentions']:
-            comment.mentions.add(User.objects.get(username=i))
+            comment.mentions.add(User.objects.get(username_alias=i))
 
         comment.save()
         context = {

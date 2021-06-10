@@ -154,7 +154,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class CommentRelatedField(serializers.RelatedField):
 
     def to_representation(self,instance):
-        return {'comment':instance.comment, 'dp':instance.user.profile.profile_pic.url, 'user':instance.user.username}
+        return {'comment':instance.comment, 'dp':instance.user.profile.profile_pic.url, 'user':instance.user.username_alias}
 
     def get_queryset(self):
         return Comment.objects.all()
