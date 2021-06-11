@@ -327,10 +327,11 @@ def get_status(request):
         user.save()
         cur_user.profile.people_i_peek.add(user)
         cur_user.save()
+        mood = user.profile.mood
         if(user.profile.online):
-            return Response(status=200,data={"status":"online"})
+            return Response(status=200,data={"status":"online","mood":mood})
         else:
-            return Response(status=200,data={"status":user.profile.last_seen.strftime("%Y-%m-%d %H:%M:%S")})
+            return Response(status=200,data={"status":user.profile.last_seen.strftime("%Y-%m-%d %H:%M:%S"),"mood":mood})
     except Exception as e:
         print(e)
         return Response(status=400)
@@ -785,5 +786,18 @@ def liked_users_list(request):
         serialized = UserCustomSerializer(likes, many=True)
         return Response(status=200, data=serialized.data)
     except Exception as e:
+        print(e)
+        return Response(status=400)
+
+@api_view(['GET'])
+def change_mood(request):
+    try:
+        user_id = int(request.query_params['user'])
+        mood_id = int(request.query_params['mood'])
+        user = User.objects.get(id=user_id)
+        user.profile.mood = mood_id
+        user.save()
+        return Response(status=200)
+    except:
         print(e)
         return Response(status=400)

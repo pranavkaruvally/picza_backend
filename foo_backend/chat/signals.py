@@ -337,9 +337,12 @@ def comment_mention_celery(instance_id,id):
 
         user_id = id
         user = User.objects.get(id=user_id)
+        if (instance.post.user == user):
+            return
         time = timezone.now().strftime("%Y-%m-%d %H:%M:%S")
         notif = MiscNotification(from_user=instance.user, to_user= user, time_created=time, post_id=instance.post.id, type="mention")
         notif.save()
+        
         
         if user.profile.online:
             _dict = {
@@ -450,7 +453,7 @@ def friend_like_notif_celery(post_id, user_id):
         _dict = {
             'type':'like_notif',
             'u':liked_user.username_alias,
-            'id':liked_user.id,
+            'id':post_id,
             'dp':liked_user.profile.profile_pic.url,
             'notif_id':notif.id,
             'time':time,

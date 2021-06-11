@@ -40,7 +40,8 @@ urlpatterns = [
     path('last_seen', api_views.add_to_last_seen, name='add_last_seen_personal'),
     path('last_seen_general', api_views.switch_off_last_seen, name='switch_off_last_seen_all'),
     path('friends_list', api_views.friends_list, name="friends-list"),
-    path('likes_list', api_views.liked_users_list, name="likes_list")
+    path('likes_list', api_views.liked_users_list, name="likes_list"),
+    path('change_mood', api_views.change_mood, name="change_mood"),
 
 
 ]

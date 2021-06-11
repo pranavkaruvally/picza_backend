@@ -112,6 +112,7 @@ def profile_pic_path(instance, filename):
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     online = models.BooleanField(default=False)
+    mood = models.IntegerField(blank=True,null=True)
     last_seen = models.DateTimeField(auto_now=False, auto_now_add=True)
     profile_pic = models.FileField(upload_to=profile_pic_path, null=True, blank=True)
     people_i_should_inform = models.ManyToManyField(User, related_name="cctvs", blank=True)
