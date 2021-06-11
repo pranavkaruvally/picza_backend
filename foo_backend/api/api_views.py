@@ -658,7 +658,7 @@ def add_to_last_seen(request):
         else:
             user.profile.yall_cant_see_me.remove(other_user)
 
-        user.save()
+        user.profile.save()
         return Response(status=200)
     except Exception as e:
         print(e)
@@ -672,7 +672,7 @@ def switch_off_last_seen(request):
         user = User.objects.get(id=id)
         user.profile.general_last_seen_off = True if action == "add" else False
 
-        user.save()
+        user.profile.save()
         return Response(status=200)
     except Exception as e:
         print(e)
