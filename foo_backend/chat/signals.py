@@ -337,7 +337,7 @@ def comment_mention_celery(instance_id,id):
 
         user_id = id
         user = User.objects.get(id=user_id)
-        if (instance.post.user == user):
+        if (instance.user == user):
             return
         time = timezone.now().strftime("%Y-%m-%d %H:%M:%S")
         notif = MiscNotification(from_user=instance.user, to_user= user, time_created=time, post_id=instance.post.id, type="mention")
