@@ -63,8 +63,17 @@ class UserCustomSerializer(serializers.ModelSerializer):
         representation['dp'] = instance.profile.profile_pic.url if instance.profile.profile_pic else ''
         return representation
 
+
+class UserRelatedField(serializers.RelatedField):
+
+    def to_representation(self,instance):
+        return {"f_name":instance.f_name,"l_name":instance.l_name,"id":instance.id,"username":instance.username_alias,"dp":instance.profile.profile_pic.url if instance.profile.profile_pic else ''}
+
+    def get_queryset(self):
+        return User.objects.all()
+
 class PostSerializer(serializers.ModelSerializer):
-    user = UserCustomSerializer()
+    user = UserRelatedField()
 
     class Meta:
 
