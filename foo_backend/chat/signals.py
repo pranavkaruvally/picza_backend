@@ -402,9 +402,17 @@ def get_informers_list(id):
                     'u':_user.username,
                     's':'offline'
                 }
+            _user.profile.people_i_should_inform.remove(user)
             # ])
             async_to_sync(channel_layer.group_send)(str(user.uprn),{'type':'general_down_send','content':_dict})
+            
 
+@app.task()
+def remove_me_from_others_lists(id):
+    _user = User.objects.get(id=id)
+    qs = _user.profile.people_i_peek.all()
+    for user in qs:
+        user.profile.people_i_should_inform.remove(_user)
 
 @app.task()
 def friend_request_accepted_notif_celery(frnd_req_id):

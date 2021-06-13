@@ -19,7 +19,11 @@ from datetime import datetime
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from foo_backend.celery import app
-from .signals import get_informers_list, send_anonymous_notif
+from .signals import (
+    get_informers_list, 
+    send_anonymous_notif,
+    remove_me_from_others_lists
+)
 
 User = get_user_model()
 
@@ -781,6 +785,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         get_informers_list.delay(self.user.id)
+        remove_me_from_others_lists.delay(self.user.id)
         
         await self.update_user_offline(self.user)
         await self.channel_layer.group_discard(
@@ -836,6 +841,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     }
                 # ])
                 async_to_sync(self.channel_layer.group_send)(user.username,_dict)
+        
         # return final_list
 
     @database_sync_to_async
