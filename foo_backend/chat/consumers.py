@@ -170,9 +170,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 final_list.append([
                     str(user.uprn),
                     {   
-                        'type':'online_status',
+                        'type':'general_down_send',
+                        'content':{'type':'online_status',
                         'u':self.user.username,
-                        's':'online'
+                        's':'online'}
                     }
                 ])
         return final_list
