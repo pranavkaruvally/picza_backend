@@ -402,7 +402,7 @@ def get_informers_list(id):
                     'u':_user.username,
                     's':'offline'
                 }
-            _user.profile.people_i_should_inform.remove(user)
+           
             # ])
             async_to_sync(channel_layer.group_send)(str(user.uprn),{'type':'general_down_send','content':_dict})
             
