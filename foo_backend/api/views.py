@@ -28,7 +28,7 @@ def login(request):
 @csrf_exempt
 @api_view(['POST'])                                               # To ensure only post requests can access this view
 def register(request):
-    serialized = UserSerializer(data=request.data)
+    serialized = UserSerializer(data=request.data,context={"type":""})
     if serialized.is_valid():
         user = serialized.save()
         serialized.validated_data['id'] = user.id

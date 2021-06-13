@@ -37,6 +37,10 @@ class UserSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance);
         representation['id'] = instance.id
+        if self.context['type'] == 'login':
+            representation['mood'] =  instance.profile.mood if instance.profile.mood else 0
+            representation['general_last_seen'] = instance.profile.general_last_seen_off
+            representation['last_seen_hidden'] = [user.username for user in instance.profile.yall_cant_see_me.all()]
         if(instance.dob is None):
             representation['dobVerified'] = False
         else:

@@ -211,7 +211,7 @@ class Post(models.Model):
     file = models.FileField(upload_to = user_directory_path)
     post_type = models.CharField(max_length=15)
     time_created = models.DateTimeField(auto_now_add=True)
-    caption = models.CharField(max_length=100)
+    caption = models.CharField(max_length=500)
     thumbnail = models.FileField(upload_to = post_thumbnail_path, null=True, blank=True)
 
     likes = models.ManyToManyField(User,related_name="likes", blank=True)
@@ -256,7 +256,7 @@ class Story(models.Model):
 
     user = models.ForeignKey(User, related_name="stories", on_delete=models.CASCADE)
     file = models.FileField(upload_to=user_story_directory_path)
-    caption = models.TextField(max_length=1000)
+    caption = models.TextField(max_length=200)
     time_created = models.DateTimeField(auto_now_add=True)
     views = models.ManyToManyField(User, related_name="story_views", blank=True)
     
@@ -264,7 +264,7 @@ class StoryComment(models.Model):
 
     user = models.ForeignKey(User,on_delete=models.CASCADE, null=True)
     story = models.ForeignKey(Story, related_name="story_comment", on_delete=models.CASCADE)
-    comment = models.TextField(max_length=1000)
+    comment = models.TextField(max_length=200)
     time_created = models.DateTimeField(auto_now_add=True)
 
 class StoryNotification(models.Model):

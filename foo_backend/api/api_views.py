@@ -56,7 +56,7 @@ def login(request):
     user = auth.authenticate(email=email, password=password)
     if user is not None:
         auth.login(request, user)
-        serialized = UserSerializer(user)
+        serialized = UserSerializer(user,context={'type':'login'})
         return Response(status=200, data=serialized.data)
 
     return Response(status=400, data={"email": email, "password": password})
