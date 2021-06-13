@@ -168,7 +168,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         for user in online_inform_qs:
             if user.profile.online:
                 final_list.append([
-                    user.username,
+                    str(user.uprn),
                     {   
                         'type':'online_status',
                         'u':self.user.username,
