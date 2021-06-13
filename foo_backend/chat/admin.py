@@ -11,6 +11,7 @@ from .models import (
     Story,
     Comment,
     StoryNotification,
+    MiscNotification,
 )
 # from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -116,5 +117,6 @@ admin.site.register(Notification)
 admin.site.register(Story)
 admin.site.register(Comment)
 admin.site.register(StoryNotification)
+admin.site.register(MiscNotification)
 
 
