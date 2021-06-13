@@ -55,7 +55,11 @@ class UserCustomSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation['username'] = instance.username_alias
+        type = self.context['type']
+        if type=="chat":
+            representation['username'] = instance.username
+        else:
+            representation['username'] = instance.username_alias
         representation['dp'] = instance.profile.profile_pic.url if instance.profile.profile_pic else ''
         return representation
 

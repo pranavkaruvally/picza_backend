@@ -447,7 +447,7 @@ def friend_like_notif_celery(post_id, user_id):
     if liked_user==post_user:
         return 
     time = timezone.now().strftime("%Y-%m-%d %H:%M:%S")
-    notif = MiscNotification.objects.create(from_user=liked_user,to_user=post_user,type="like",time_created=time)
+    notif = MiscNotification.objects.create(from_user=liked_user,to_user=post_user,type="like",time_created=time, post_id=post_id)
     notif.save()
     if post_user.profile.online:
         _dict = {

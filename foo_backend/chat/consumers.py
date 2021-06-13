@@ -221,7 +221,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 final_list.append({
                     'type':'like_notif',
                     'u':obj.from_user.username,
-                    'id':obj.from_user.id,
+                    'id':obj.post_id,
                     'notif_id':obj.id,
                     'time':obj.time_created,
                     'dp':obj.from_user.profile.profile_pic.url,
