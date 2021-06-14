@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from django.contrib.auth.password_validation import validate_password
 from chat.models import (
 Post,
 Comment,
@@ -8,14 +10,22 @@ Story
 
 User = get_user_model()
 
+
+
 class UserSerializer(serializers.ModelSerializer):
 
+    
+
+    def validate_password(self, value):
+        print(self.initial_data)
+        user = User.objects.create_user(email=self.initial_data['email'])
+        validate_password(value,user)
     class Meta:
 
         model = User
         fields = ['email','password','uprn','username','token']
         extra_kwargs = {
-            'password':{'write_only':True},
+            'password':{'write_only':True,},
             'uprn':{'required':True},
             'token':{'required':True},
             }
