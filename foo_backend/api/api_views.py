@@ -53,8 +53,12 @@ def login(request):
     print(request.data)
     email = request.data["email"]
     password = request.data["password"]
+    token = request.data["token"]
     user = auth.authenticate(email=email, password=password)
     if user is not None:
+        device = user.fcmdevice_set.first()
+        device.registration_id = token
+        device.save()
         auth.login(request, user)
         serialized = UserSerializer(user,context={'type':'login'})
         return Response(status=200, data=serialized.data)
