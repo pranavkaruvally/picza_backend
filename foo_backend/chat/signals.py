@@ -109,7 +109,7 @@ def send_request_celery(id):
                 # send_notif(instance.to_user.username)
                 async_to_sync(channel_layer.group_send)(str(instance.to_user.uprn), {
                     "type": "notification", 
-                    "username": instance.from_user.username, 
+                    "username": instance.from_user.username_alias, 
                     'user_id': instance.from_user.id, 
                     'dp':instance.from_user.profile.profile_pic.url,
                     'id': instance.id,

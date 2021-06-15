@@ -249,7 +249,7 @@ def send_friend_request(request):
             time_created=time,
             )
         friend_request.save()
-        send_request_celery(friend_request.id)
+        send_request_celery.delay(friend_request.id)
         return Response(status=200)
     except Exception as e:
         print(e)
