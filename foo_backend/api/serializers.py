@@ -20,6 +20,7 @@ class UserSerializer(serializers.ModelSerializer):
         print(self.initial_data)
         user = User.objects.create_user(email=self.initial_data['email'])
         validate_password(value,user)
+        return value
     class Meta:
 
         model = User
