@@ -51,11 +51,11 @@ class UserSerializer(serializers.ModelSerializer):
             representation['mood'] =  instance.profile.mood if instance.profile.mood else 0
             representation['general_last_seen'] = instance.profile.general_last_seen_off
             representation['last_seen_hidden'] = [user.username for user in instance.profile.yall_cant_see_me.all()]
-        if(instance.dob is None):
-            representation['dobVerified'] = False
-        else:
-            representation['dobVerified'] = True
-            representation['dp'] = instance.profile.profile_pic.url if instance.profile.profile_pic else ''
+            if(instance.dob is None):
+                representation['dobVerified'] = False
+            else:
+                representation['dobVerified'] = True
+                representation['dp'] = instance.profile.profile_pic.url if instance.profile.profile_pic else ''
         representation['f_name'] = instance.f_name if instance.f_name else ""
         representation['l_name'] = instance.l_name if instance.l_name  else ""
         return representation
@@ -136,7 +136,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def to_representation(self,instance):
         representation = super().to_representation(instance)
-        representation['username']=instance.username_alias
+        representation['username']=instance.username
         request = self.context['request']
         cur_user = self.context['cur_user']
         if(instance.profile.profile_pic):
